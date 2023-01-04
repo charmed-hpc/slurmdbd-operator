@@ -1,0 +1,36 @@
+name: slurmdbd
+
+summary: |
+    Slurm DBD accounting daemon
+
+maintainers:
+    - OmniVector Solutions <admin@omnivector.solutions>
+
+description: |
+    This charm provides slurmdbd, munged, and the bindings to other utilities
+    that make lifecycle operations a breeze.
+
+    slurmdbd provides a secure enterprise-wide interface to a database for
+    SLURM. This is particularly useful for archiving accounting records.
+
+tags:
+  - slurm
+  - hpc
+
+series:
+  - focal
+  - centos7
+
+provides:
+  slurmdbd:
+    interface: slurmdbd
+
+requires:
+  db:
+    interface: mysql
+  fluentbit:
+    interface: fluentbit
+
+peers:
+  slurmdbd-peer:
+    interface: slurmdbd-peer
