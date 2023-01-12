@@ -105,7 +105,7 @@ class TestCharm(unittest.TestCase):
         self.assertEqual(self.harness.charm.unit.status, BlockedStatus("Cannot start slurmdbd"))
 
     def test_on_db_unavailable(self) -> None:
-        """Test the that _on_db_available method works."""
+        """Test that _on_db_available method works."""
         self.harness.charm._db.on.database_unavailable.emit()
         self.assertEqual(self.harness.charm._stored.db_info, {})
 
