@@ -20,7 +20,6 @@ import pathlib
 import shlex
 import subprocess
 from typing import Dict
-
 from urllib import request
 
 logger = logging.getLogger(__name__)

@@ -45,7 +45,7 @@ class MySQLClient(Object):
 
     @property
     def is_joined(self) -> bool:
-        """Return wether the relation was created."""
+        """Return whether the relation was created."""
         if self._charm.framework.model.relations.get(self._relation_name):
             return True
         else:

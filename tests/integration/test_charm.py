@@ -15,16 +15,15 @@
 
 """Test slurmdbd charm against other SLURM charms in the latest/edge channel."""
 
+import asyncio
 import logging
 import pathlib
 from typing import Any, Coroutine
 
-import asyncio
 import pytest
 import tenacity
-from pytest_operator.plugin import OpsTest
-
 from helpers import get_slurmctld_res, get_slurmdbd_res
+from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ logger = logging.getLogger()
 
 
 class SlurmdbdPeerAvailableEvent(EventBase):
-    """Emmited in the relation_changed event when a peer comes online."""
+    """Emitted in the relation_changed event when a peer comes online."""
 
 
 class SlurmdbdPeerRelationEvents(ObjectEvents):
@@ -60,8 +60,8 @@ class SlurmdbdPeer(Object):
 
     def _on_relation_changed(self, event):
         """Use the leader and app relation data to schedule active/backup."""
-        # We only modify the slurmdbd queue if we are the leaader.
-        # As such, we dont need to preform any operations here
+        # We only modify the slurmdbd queue if we are the leader.
+        # As such, we don't need to perform any operations here
         # if we are not the leader.
         if self.framework.model.unit.is_leader():
             relation = self.framework.model.get_relation(self._relation_name)
@@ -99,24 +99,18 @@ class SlurmdbdPeer(Object):
                 # slurmdbd_peers > 0 and try to promote a standby to a backup.
                 if backup_slurmdbd in slurmdbd_peers:
                     slurmdbd_peers_tmp.remove(backup_slurmdbd)
-                    app_relation_data["standby_slurmdbd"] = json.dumps(
-                        slurmdbd_peers_tmp
-                    )
+                    app_relation_data["standby_slurmdbd"] = json.dumps(slurmdbd_peers_tmp)
                 else:
                     if len(slurmdbd_peers) > 0:
                         app_relation_data["backup_slurmdbd"] = slurmdbd_peers_tmp.pop()
-                        app_relation_data["standby_slurmdbd"] = json.dumps(
-                            slurmdbd_peers_tmp
-                        )
+                        app_relation_data["standby_slurmdbd"] = json.dumps(slurmdbd_peers_tmp)
                     else:
                         app_relation_data["backup_slurmdbd"] = ""
                         app_relation_data["standby_slurmdbd"] = json.dumps([])
             else:
                 if len(slurmdbd_peers) > 0:
                     app_relation_data["backup_slurmdbd"] = slurmdbd_peers_tmp.pop()
-                    app_relation_data["standby_slurmdbd"] = json.dumps(
-                        slurmdbd_peers_tmp
-                    )
+                    app_relation_data["standby_slurmdbd"] = json.dumps(slurmdbd_peers_tmp)
                 else:
                     app_relation_data["standby_slurmdbd"] = json.dumps([])
 
@@ -126,9 +120,7 @@ class SlurmdbdPeer(Object):
             # NOTE: We only care about the active and backup slurdbd.
             # Set the active slurmdbd info and check for and set the
             # backup slurmdbd information if one exists.
-            ctxt["active_slurmdbd_ingress_address"] = unit_relation_data[
-                "ingress-address"
-            ]
+            ctxt["active_slurmdbd_ingress_address"] = unit_relation_data["ingress-address"]
             ctxt["active_slurmdbd_hostname"] = self._charm.get_hostname()
             ctxt["active_slurmdbd_port"] = str(self._charm.get_port())
 
@@ -140,9 +132,7 @@ class SlurmdbdPeer(Object):
                 for unit in relation.units:
                     if unit.name == backup_slurmdbd:
                         unit_data = relation.data[unit]
-                        ctxt["backup_slurmdbd_ingress_address"] = unit_data[
-                            "ingress-address"
-                        ]
+                        ctxt["backup_slurmdbd_ingress_address"] = unit_data["ingress-address"]
                         ctxt["backup_slurmdbd_hostname"] = unit_data["hostname"]
                         ctxt["backup_slurmdbd_port"] = unit_data["port"]
             else:

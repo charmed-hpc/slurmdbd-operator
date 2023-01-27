@@ -89,14 +89,16 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch(
-        "slurm_ops_manager.SlurmManager.needs_reboot", new_callable=PropertyMock(return_value=False)
+        "slurm_ops_manager.SlurmManager.needs_reboot",
+        new_callable=PropertyMock(return_value=False),
     )
     def test_check_status_slurm_not_installed(self, _) -> None:
         """Test that _check_status method works if slurm is not installed."""
-
         self.harness.charm._stored.slurm_installed = True
         res = self.harness.charm._check_status()
-        self.assertEqual(self.harness.charm.unit.status, BlockedStatus('Need relations: MySQL,slurcmtld'))
+        self.assertEqual(
+            self.harness.charm.unit.status, BlockedStatus("Need relations: MySQL,slurmctld")
+        )
         self.assertFalse(
             res, msg="_check_status returned value True instead of expected value False."
         )

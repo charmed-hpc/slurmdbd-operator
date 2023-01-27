@@ -18,9 +18,8 @@
 import pathlib
 
 import pytest
-from pytest_operator.plugin import OpsTest
-
 from helpers import ETCD, VERSION
+from pytest_operator.plugin import OpsTest
 
 
 @pytest.fixture(scope="module")
