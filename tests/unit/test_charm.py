@@ -1,4 +1,17 @@
 #!/usr/bin/env python3
+# Copyright 2023 Canonical Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Test default charm events such as upgrade charm, install, etc."""
 
@@ -76,14 +89,16 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch(
-        "slurm_ops_manager.SlurmManager.needs_reboot", new_callable=PropertyMock(return_value=False)
+        "slurm_ops_manager.SlurmManager.needs_reboot",
+        new_callable=PropertyMock(return_value=False),
     )
     def test_check_status_slurm_not_installed(self, _) -> None:
         """Test that _check_status method works if slurm is not installed."""
-
         self.harness.charm._stored.slurm_installed = True
         res = self.harness.charm._check_status()
-        self.assertEqual(self.harness.charm.unit.status, BlockedStatus('Need relations: MySQL,slurcmtld'))
+        self.assertEqual(
+            self.harness.charm.unit.status, BlockedStatus("Need relations: MySQL,slurmctld")
+        )
         self.assertFalse(
             res, msg="_check_status returned value True instead of expected value False."
         )
