@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 SERIES = ["focal"]
 SLURMDBD = "slurmdbd"
 SLURMCTLD = "slurmctld"
-DATABASE = "percona-cluster"
+DATABASE = "mysql"
+ROUTER = "mysql-router"
 
 
 @pytest.mark.abort_on_fail
@@ -59,18 +60,26 @@ async def test_build_and_deploy_against_edge(
             series=series,
         ),
         ops_test.model.deploy(
+            ROUTER,
+            application_name=f"{SLURMDBD}-{ROUTER}",
+            channel="dpe/edge",
+            num_units=1,
+            series=series,
+        ),
+        ops_test.model.deploy(
             DATABASE,
             application_name=DATABASE,
             channel="edge",
             num_units=1,
-            series="bionic",
+            series="jammy",
         ),
     )
     # Attach resources to charms.
     await ops_test.juju("attach-resource", SLURMCTLD, f"etcd={slurmctld_res['etcd']}")
-    # Set integrations for charmed applications.
+    # Set relations for charmed applications.
     await ops_test.model.relate(f"{SLURMDBD}:{SLURMDBD}", f"{SLURMCTLD}:{SLURMDBD}")
-    await ops_test.model.relate(f"{SLURMDBD}:db", f"{DATABASE}:db")
+    await ops_test.model.relate(f"{SLURMDBD}-{ROUTER}:backend-database", f"{DATABASE}:database")
+    await ops_test.model.relate(f"{SLURMDBD}:database", f"{SLURMDBD}-{ROUTER}:database")
     # Reduce the update status frequency to accelerate the triggering of deferred events.
     async with ops_test.fast_forward():
         await ops_test.model.wait_for_idle(apps=[SLURMDBD], status="active", timeout=1000)

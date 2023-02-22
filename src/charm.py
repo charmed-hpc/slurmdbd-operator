@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
+# Copyright 2020 Omnivector Solutions, LLC.
+# See LICENSE file for licensing details.
+
 """Slurmdbd Operator Charm."""
+
 import logging
 from pathlib import Path
 from time import sleep
+from typing import Any, Dict
 
+from charms.data_platform_libs.v0.data_interfaces import (
+    DatabaseCreatedEvent,
+    DatabaseRequires,
+)
 from charms.fluentbit.v0.fluentbit import FluentbitClient
-from interface_mysql import MySQLClient
 from interface_slurmdbd import Slurmdbd
 from interface_slurmdbd_peer import SlurmdbdPeer
 from ops.charm import CharmBase, CharmEvents
@@ -13,8 +21,9 @@ from ops.framework import EventBase, EventSource, StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
 from slurm_ops_manager import SlurmManager
+from utils.manager import SlurmdbdManager
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class JwtAvailable(EventBase):
@@ -43,9 +52,9 @@ class SlurmdbdCharm(CharmBase):
     _stored = StoredState()
     on = SlurmdbdCharmEvents()
 
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs) -> None:
         """Set the default class attributes."""
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
 
         self._stored.set_default(
             db_info={},
@@ -55,13 +64,14 @@ class SlurmdbdCharm(CharmBase):
             cluster_name=str(),
         )
 
-        self._db = MySQLClient(self, "db")
+        self._slurmdbd_manager = SlurmdbdManager()
+        self._db = DatabaseRequires(self, relation_name="database", database_name="slurm_acct_db")
         self._slurm_manager = SlurmManager(self, "slurmdbd")
         self._slurmdbd = Slurmdbd(self, "slurmdbd")
         self._slurmdbd_peer = SlurmdbdPeer(self, "slurmdbd-peer")
         self._fluentbit = FluentbitClient(self, "fluentbit")
 
-        event_handler_bindings = {
+        for event, handler in {
             self.on.install: self._on_install,
             self.on.upgrade_charm: self._on_upgrade,
             self.on.update_status: self._on_update_status,
@@ -69,15 +79,13 @@ class SlurmdbdCharm(CharmBase):
             self.on.jwt_available: self._on_jwt_available,
             self.on.munge_available: self._on_munge_available,
             self.on.write_config: self._write_config_and_restart_slurmdbd,
-            self._db.on.database_available: self._write_config_and_restart_slurmdbd,
-            self._db.on.database_unavailable: self._on_db_unavailable,
+            self._db.on.database_created: self._on_database_created,
             self._slurmdbd_peer.on.slurmdbd_peer_available: self._write_config_and_restart_slurmdbd,
             self._slurmdbd.on.slurmctld_available: self._on_slurmctld_available,
             self._slurmdbd.on.slurmctld_unavailable: self._on_slurmctld_unavailable,
             # fluentbit
             self.on["fluentbit"].relation_created: self._on_fluentbit_relation_created,
-        }
-        for event, handler in event_handler_bindings.items():
+        }.items():
             self.framework.observe(event, handler)
 
     def _on_install(self, event):
@@ -147,10 +155,24 @@ class SlurmdbdCharm(CharmBase):
             self.unit.status = BlockedStatus("Error restarting munge")
             event.defer()
 
-    def _on_db_unavailable(self, event):
-        self._stored.db_info = {}
-        # TODO tell slurmctld that slurmdbd left?
-        self._check_status()
+    def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
+        """Set database info in StoredState and invoke _write_config_and_restart_slurmdbd.
+
+        Args:
+            event (DatabaseCreatedEvent):
+                Information passed by MySQL after the slurm_acct_db database has been created.
+        """
+        logger.debug("Configuring new backend database for slurmdbd.")
+        self.set_db_info(
+            {
+                "db_username": event.username,
+                "db_password": event.password,
+                "db_hostname": "127.0.0.1",
+                "db_port": "3306",
+                "db_name": "slurm_acct_db",
+            }
+        )
+        self._write_config_and_restart_slurmdbd(event)
 
     def _on_slurmctld_available(self, event):
         self.on.jwt_available.emit()
@@ -177,19 +199,13 @@ class SlurmdbdCharm(CharmBase):
             event.defer()
             return
 
-        db_info = self._stored.db_info
-        slurmdbd_info = self._slurmdbd_peer.get_slurmdbd_info()
-
-        # settings from the config.yaml
-        config = {"slurmdbd_debug": self.config.get("slurmdbd-debug")}
-
         slurmdbd_config = {
-            **config,
-            **slurmdbd_info,
-            **db_info,
+            "slurmdbd_debug": self.config.get("slurmdbd-debug"),
+            **self._slurmdbd_peer.get_slurmdbd_info(),
+            **self._stored.db_info,
         }
 
-        self._slurm_manager.slurm_systemctl("stop")
+        self._slurmdbd_manager.stop()
         self._slurm_manager.render_slurm_configs(slurmdbd_config)
 
         # At this point, we must guarantee that slurmdbd is correctly
@@ -241,7 +257,10 @@ class SlurmdbdCharm(CharmBase):
         # first connect to the db to be able to connect to slurmctld correctly
         slurmctld_available = self._stored.jwt_available and self._stored.munge_available
         statuses = {
-            "MySQL": {"available": self._stored.db_info != {}, "joined": self._db.is_joined},
+            "MySQL": {
+                "available": self._stored.db_info != {},
+                "joined": self._stored.db_info != {},
+            },
             "slurmctld": {"available": slurmctld_available, "joined": self._slurmdbd.is_joined},
         }
 
@@ -283,9 +302,14 @@ class SlurmdbdCharm(CharmBase):
         """Return the hostname from slurm-ops-manager."""
         return self._slurm_manager.hostname
 
-    def set_db_info(self, db_info):
-        """Set the db_info in the stored state."""
-        self._stored.db_info = db_info
+    def set_db_info(self, new_db_info: Dict[str, Any]) -> None:
+        """Set the db_info in the stored state.
+
+        Args:
+            new_db_info (Dict[str, Any]):
+                New backend database information to set.
+        """
+        self._stored.db_info.update(new_db_info)
 
     @property
     def cluster_name(self) -> str:

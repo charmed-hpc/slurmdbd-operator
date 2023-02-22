@@ -119,11 +119,6 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._check_slurmdbd(max_attemps=1)
         self.assertEqual(self.harness.charm.unit.status, BlockedStatus("Cannot start slurmdbd"))
 
-    def test_on_db_unavailable(self) -> None:
-        """Test that _on_db_available method works."""
-        self.harness.charm._db.on.database_unavailable.emit()
-        self.assertEqual(self.harness.charm._stored.db_info, {})
-
     @unittest.expectedFailure
     def test_on_jwt_available(self) -> None:
         """Test that _on_jwt_available method works.
