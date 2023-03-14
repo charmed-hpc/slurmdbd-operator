@@ -223,7 +223,7 @@ class SlurmdbdCharm(CharmBase):
 
         self._check_status()
 
-    def _check_slurmdbd(self, max_attemps=3) -> None:
+    def _check_slurmdbd(self, max_attemps=5) -> None:
         """Ensure slurmdbd is up and running."""
         logger.debug("## Checking if slurmdbd is active")
 
@@ -235,7 +235,7 @@ class SlurmdbdCharm(CharmBase):
                 logger.warning("## Slurmdbd not running, trying to start it")
                 self.unit.status = WaitingStatus("Starting slurmdbd")
                 self._slurm_manager.restart_slurm_component()
-                sleep(1 + i)
+                sleep(3 + i)
 
         if self._slurm_manager.slurm_is_active():
             self._check_status()
