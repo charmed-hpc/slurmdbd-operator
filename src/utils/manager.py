@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2023 Canonical Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +16,7 @@
 
 from charms.operator_libs_linux.v1.systemd import service_restart, service_start, service_stop
 
-from ._confeditor import SlurmdbdConfEditor
+from .confeditor import SlurmdbdConfEditor
 
 
 class SlurmdbdManager:
