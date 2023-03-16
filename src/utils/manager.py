@@ -14,7 +14,12 @@
 
 """Manager for unit slurmdbd service."""
 
-from charms.operator_libs_linux.v1.systemd import service_restart, service_start, service_stop
+from charms.operator_libs_linux.v1.systemd import (
+    service_restart,
+    service_running,
+    service_start,
+    service_stop,
+)
 
 from .confeditor import SlurmdbdConfEditor
 
@@ -27,9 +32,14 @@ class SlurmdbdManager:
         """Slurmdbd configuration file editor.
 
         Returns:
-            (SlurmdbdConfEditor): Instance of slurmdbd configuration file editor.
+            SlurmdbdConfEditor: Instance of slurmdbd configuration file editor.
         """
         return SlurmdbdConfEditor()
+
+    @property
+    def active(self) -> bool:
+        """Get if slurmdbd daemon is active or not."""
+        return service_running("slurmdbd")
 
     @staticmethod
     def start() -> None:

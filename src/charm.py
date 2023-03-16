@@ -228,16 +228,16 @@ class SlurmdbdCharm(CharmBase):
         logger.debug("## Checking if slurmdbd is active")
 
         for i in range(max_attemps):
-            if self._slurm_manager.slurm_is_active():
+            if self._slurmdbd_manager.active:
                 logger.debug("## Slurmdbd running")
                 break
             else:
                 logger.warning("## Slurmdbd not running, trying to start it")
                 self.unit.status = WaitingStatus("Starting slurmdbd")
-                self._slurm_manager.restart_slurm_component()
+                self._slurmdbd_manager.restart()
                 sleep(3 + i)
 
-        if self._slurm_manager.slurm_is_active():
+        if self._slurmdbd_manager.active:
             self._check_status()
         else:
             self.unit.status = BlockedStatus("Cannot start slurmdbd")
