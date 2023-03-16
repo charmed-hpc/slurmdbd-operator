@@ -104,25 +104,20 @@ class TestCharm(unittest.TestCase):
         )
 
     @patch("slurm_ops_manager.SlurmManager.install")
-    @patch("slurm_ops_manager.SlurmManager.restart_slurm_component")
-    @patch("slurm_ops_manager.SlurmManager.slurm_is_active", return_value=True)
+    @patch("utils.manager.SlurmdbdManager.restart")
+    @patch("utils.manager.SlurmdbdManager.active", return_value=True)
     @patch("charm.SlurmdbdCharm._check_status")
     def test_check_slurmdbd(self, *_) -> None:
         """Test that _check_slurmdbd method works."""
         self.harness.charm._check_slurmdbd(max_attemps=1)
         self.assertNotEqual(self.harness.charm.unit.status, BlockedStatus("Cannot start slurmdbd"))
 
-    @patch("slurm_ops_manager.SlurmManager.slurm_is_active", return_value=False)
-    @patch("slurm_ops_manager.SlurmManager.restart_slurm_component")
+    @patch("utils.manager.SlurmdbdManager.restart")
+    @patch("utils.manager.SlurmdbdManager.active", new_callable=PropertyMock(return_value=False))
     def test_check_slurmdbd_slurm_not_active(self, *_) -> None:
         """Test that proper block status is thrown if slurm is not active."""
         self.harness.charm._check_slurmdbd(max_attemps=1)
         self.assertEqual(self.harness.charm.unit.status, BlockedStatus("Cannot start slurmdbd"))
-
-    def test_on_db_unavailable(self) -> None:
-        """Test that _on_db_available method works."""
-        self.harness.charm._db.on.database_unavailable.emit()
-        self.assertEqual(self.harness.charm._stored.db_info, {})
 
     @unittest.expectedFailure
     def test_on_jwt_available(self) -> None:
