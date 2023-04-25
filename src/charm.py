@@ -5,6 +5,7 @@
 """Slurmdbd Operator Charm."""
 
 import logging
+import subprocess
 from pathlib import Path
 from time import sleep
 from typing import Any, Dict
@@ -19,7 +20,7 @@ from interface_slurmdbd_peer import SlurmdbdPeer
 from ops.charm import CharmBase, CharmEvents
 from ops.framework import EventBase, EventSource, StoredState
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, WaitingStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, WaitingStatus
 from slurm_ops_manager import SlurmManager
 from utils.manager import SlurmdbdManager
 
@@ -242,10 +243,15 @@ class SlurmdbdCharm(CharmBase):
         else:
             self.unit.status = BlockedStatus("Cannot start slurmdbd")
 
-    def _check_status(self) -> bool:
+    def _check_status(self) -> bool:  # noqa C901
         """Check that we have the things we need."""
         if self._slurm_manager.needs_reboot:
-            self.unit.status = BlockedStatus("Machine needs reboot")
+            try:
+                self.unit.status = MaintenanceStatus("Rebooting...")
+                logger.debug("Scheduling machine reboot")
+                subprocess.run(["juju-reboot"], check=True)
+            except subprocess.CalledProcessError:
+                logger.error("Failed to schedule machine reboot")
             return False
 
         slurm_installed = self._stored.slurm_installed
