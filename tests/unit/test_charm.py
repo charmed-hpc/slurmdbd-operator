@@ -84,7 +84,7 @@ class TestCharm(unittest.TestCase):
     def test_check_status_needs_reboot(self, *_) -> None:
         """Test that _check_status method works if unit needs reboot."""
         res = self.harness.charm._check_status()
-        self.assertEqual(self.harness.charm.unit.status, MaintenanceStatus("Rebooting"))
+        self.assertEqual(self.harness.charm.unit.status, MaintenanceStatus("Rebooting..."))
         self.assertFalse(
             res, msg="_check_status returned value True instead of expected value False."
         )
