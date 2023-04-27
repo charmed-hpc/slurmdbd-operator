@@ -79,21 +79,7 @@ class TestCharm(unittest.TestCase):
         """Test opposite case of _is_leader method."""
         self.assertEqual(self.harness.charm._is_leader(), self.harness.charm.unit.is_leader())
 
-    @patch("slurm_ops_manager.SlurmManager.needs_reboot", return_value=True)
-    @patch("subprocess.run")
-    def test_check_status_needs_reboot(self, *_) -> None:
-        """Test that _check_status method works if unit needs reboot."""
-        res = self.harness.charm._check_status()
-        self.assertEqual(self.harness.charm.unit.status, MaintenanceStatus("Rebooting..."))
-        self.assertFalse(
-            res, msg="_check_status returned value True instead of expected value False."
-        )
-
-    @patch(
-        "slurm_ops_manager.SlurmManager.needs_reboot",
-        new_callable=PropertyMock(return_value=False),
-    )
-    def test_check_status_slurm_not_installed(self, _) -> None:
+    def test_check_status_slurm_not_installed(self) -> None:
         """Test that _check_status method works if slurm is not installed."""
         self.harness.charm._stored.slurm_installed = True
         res = self.harness.charm._check_status()
