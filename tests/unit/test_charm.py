@@ -20,7 +20,7 @@ from unittest.mock import PropertyMock, patch
 
 import ops.testing
 from charm import SlurmdbdCharm
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
+from ops.model import ActiveStatus, BlockedStatus
 from ops.testing import Harness
 
 ops.testing.SIMULATE_CAN_CONNECT = True
