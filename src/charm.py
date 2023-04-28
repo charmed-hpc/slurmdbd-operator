@@ -242,12 +242,8 @@ class SlurmdbdCharm(CharmBase):
         else:
             self.unit.status = BlockedStatus("Cannot start slurmdbd")
 
-    def _check_status(self) -> bool:
+    def _check_status(self) -> bool:  # noqa C901
         """Check that we have the things we need."""
-        if self._slurm_manager.needs_reboot:
-            self.unit.status = BlockedStatus("Machine needs reboot")
-            return False
-
         slurm_installed = self._stored.slurm_installed
         if not slurm_installed:
             self.unit.status = BlockedStatus("Error installing slurm")
