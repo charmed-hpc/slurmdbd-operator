@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2023 Canonical Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +34,7 @@ VERSION_NUM = subprocess.run(
 def get_slurmctld_res() -> Dict[str, pathlib.Path]:
     """Get slurmctld resources needed for charm deployment."""
     if not (etcd := pathlib.Path(ETCD)).exists():
-        logger.info(f"Getting resource {ETCD} from {ETCD_URL}...")
+        logger.info(f"Getting resource {ETCD} from {ETCD_URL}")
         request.urlretrieve(ETCD_URL, etcd)
 
     return {"etcd": etcd}
@@ -44,5 +43,5 @@ def get_slurmctld_res() -> Dict[str, pathlib.Path]:
 def get_slurmdbd_res() -> None:
     """Get slurmdbd charm resources needed for deployment."""
     if not (version := pathlib.Path(VERSION)).exists():
-        logger.info(f"Setting resource {VERSION} to value {VERSION_NUM}...")
+        logger.info(f"Setting resource {VERSION} to value {VERSION_NUM}")
         version.write_text(VERSION_NUM)
