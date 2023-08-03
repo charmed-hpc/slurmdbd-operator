@@ -16,8 +16,6 @@
 
 import logging
 import pathlib
-import shlex
-import subprocess
 from typing import Dict
 from urllib import request
 
@@ -25,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 ETCD = "etcd-v3.5.0-linux-amd64.tar.gz"
 ETCD_URL = f"https://github.com/etcd-io/etcd/releases/download/v3.5.0/{ETCD}"
+
 
 def get_slurmctld_res() -> Dict[str, pathlib.Path]:
     """Get slurmctld resources needed for charm deployment."""
