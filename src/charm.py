@@ -7,7 +7,7 @@
 import logging
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from urllib.parse import urlparse
 
 from charms.data_platform_libs.v0.data_interfaces import (
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 SLURM_ACCT_DB = "slurm_acct_db"
-SLURMDBD_DEFAULTS = Path("/etc/default/slurmdbd")
 
 
 class JwtAvailable(EventBase):
@@ -160,71 +159,6 @@ class SlurmdbdCharm(CharmBase):
             self.unit.status = BlockedStatus("Error restarting munge")
             event.defer()
 
-    @classmethod
-    def _update_defaults(cls, **kwargs: Optional[str]):
-        """Update the environment settings in the /etc/defaults/slurmdbd file.
-
-        Updates the slurmdbd defaults environment file to add the specified
-        defaults. For example, to add the MY_VAR environment variable invoke with
-
-            self._update_defaults(my_var="foobar")
-
-        The key will be converted to all uppercase prior to being written to
-        the specified file. To remove a setting, specify the value as None, e.g.:
-
-            self._update_defaults(my_var=None)
-
-        Note: variable names will be converted to upper case when being written
-        to the file and for comparison of keys.
-
-        Args:
-            **kwargs:
-                The environment variables that should be set or unset. The key
-                will be upper-cased for the environment variable.
-        """
-        with open("/etc/default/slurmdbd", "w+") as f:
-            updated_contents = []
-
-            keys_processed = set()
-
-            for line in f.readlines():
-                # Lines beginning with a hash are a comment. Don't process these
-                # but do add the line to the output buffer to preserve it.
-                if line.startswith("#"):
-                    updated_contents.append(line)
-                    continue
-
-                # Attempt to get the environment variable and split it on the =.
-                # If the line doesn't have an equals, then don't process the line
-                # but do add the line to the output buffer to preserve it.
-                line_parts = line.split("=", 1)
-                if len(line_parts) < 2:
-                    updated_contents.append(line)
-                    continue
-
-                var_name = line_parts[0].lower()
-                if var_name not in kwargs:
-                    updated_contents.append(line)
-                    continue
-
-                keys_processed.add(var_name)
-                # If explicitly None, then remove from the output buffer as
-                # the demand is to unset the variable.
-                if kwargs[var_name] is None:
-                    continue
-
-                updated_contents.append(f"{var_name.upper()}={kwargs[var_name]}\n")
-
-            for key, value in kwargs.items():
-                # Skip any keys already processed.
-                if key in keys_processed:
-                    continue
-                updated_contents.append(f"{key.upper()}={value}\n")
-
-            f.seek(0)
-            f.truncate()
-            f.writelines(updated_contents)
-
     def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
         """Process the DatabaseCreatedEvent and updates the database parameters.
 
@@ -310,7 +244,7 @@ class SlurmdbdCharm(CharmBase):
                 }
             )
             # Make sure that the MYSQL_UNIX_PORT is removed from the env file.
-            self._update_defaults(mysql_unix_port=None)
+            self._slurmdbd_manager.set_environment_var(mysql_unix_port=None)
         else:
             # This is 100% an error condition that the charm doesn't know how to handle
             # and is an unexpected condition. This happens when there are commas but no

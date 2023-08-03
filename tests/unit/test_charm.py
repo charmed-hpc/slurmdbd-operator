@@ -16,7 +16,7 @@
 """Test default charm events such as upgrade charm, install, etc."""
 
 import unittest
-from unittest.mock import Mock, PropertyMock, mock_open, patch
+from unittest.mock import Mock, PropertyMock, patch
 
 import ops.testing
 from charm import SlurmdbdCharm
@@ -99,6 +99,7 @@ class TestCharm(unittest.TestCase):
         self.harness.charm._check_slurmdbd(max_attemps=1)
         self.assertNotEqual(self.harness.charm.unit.status, BlockedStatus("Cannot start slurmdbd"))
 
+    @patch("charm.sleep")
     @patch("utils.manager.SlurmdbdManager.restart")
     @patch("utils.manager.SlurmdbdManager.active", new_callable=PropertyMock(return_value=False))
     def test_check_slurmdbd_slurm_not_active(self, *_) -> None:
@@ -169,9 +170,9 @@ class TestCharm(unittest.TestCase):
 
     @patch("charm.SlurmdbdCharm._write_config_and_restart_slurmdbd")
     @patch("charm.SlurmdbdCharm.set_db_info")
-    @patch("charm.SlurmdbdCharm._update_defaults")
+    @patch("utils.manager.SlurmdbdManager.set_environment_var")
     def test__on_database_created_socket_endpoints(
-        self, _update_defaults, _set_db_info, _write_config_and_restart_slurmdbd
+        self, _set_environment_var, _set_db_info, _write_config_and_restart_slurmdbd
     ) -> None:
         """Tests socket endpoints update the environment file."""
         event = Mock()
@@ -181,7 +182,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_database_created(event)
 
-        _update_defaults.assert_called_once_with(mysql_unix_port='"/path/to/some/socket"')
+        _set_environment_var.assert_called_once_with(mysql_unix_port='"/path/to/some/socket"')
         _set_db_info.assert_called_once_with(
             {
                 "db_username": "fake-user",
@@ -193,9 +194,9 @@ class TestCharm(unittest.TestCase):
 
     @patch("charm.SlurmdbdCharm._write_config_and_restart_slurmdbd")
     @patch("charm.SlurmdbdCharm.set_db_info")
-    @patch("charm.SlurmdbdCharm._update_defaults")
+    @patch("utils.manager.SlurmdbdManager.set_environment_var")
     def test__on_database_created_socket_multiple_endpoints(
-        self, _update_defaults, _set_db_info, _write_config_and_restart_slurmdbd
+        self, _set_environment_var, _set_db_info, _write_config_and_restart_slurmdbd
     ) -> None:
         """Tests multiple socket endpoints only uses one endpoint."""
         event = Mock()
@@ -206,7 +207,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_database_created(event)
 
-        _update_defaults.assert_called_once_with(mysql_unix_port='"/some/other/path"')
+        _set_environment_var.assert_called_once_with(mysql_unix_port='"/some/other/path"')
         _set_db_info.assert_called_once_with(
             {
                 "db_username": "fake-user",
@@ -218,9 +219,9 @@ class TestCharm(unittest.TestCase):
 
     @patch("charm.SlurmdbdCharm._write_config_and_restart_slurmdbd")
     @patch("charm.SlurmdbdCharm.set_db_info")
-    @patch("charm.SlurmdbdCharm._update_defaults")
+    @patch("utils.manager.SlurmdbdManager.set_environment_var")
     def test__on_database_created_tcp_endpoint(
-        self, _update_defaults, _set_db_info, _write_config_and_restart_slurmdbd
+        self, _set_environment_var, _set_db_info, _write_config_and_restart_slurmdbd
     ) -> None:
         """Tests tcp endpoint for database."""
         event = Mock()
@@ -230,7 +231,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_database_created(event)
 
-        _update_defaults.assert_called_once_with(mysql_unix_port=None)
+        _set_environment_var.assert_called_once_with(mysql_unix_port=None)
         _set_db_info.assert_called_once_with(
             {
                 "db_username": "fake-user",
@@ -244,9 +245,9 @@ class TestCharm(unittest.TestCase):
 
     @patch("charm.SlurmdbdCharm._write_config_and_restart_slurmdbd")
     @patch("charm.SlurmdbdCharm.set_db_info")
-    @patch("charm.SlurmdbdCharm._update_defaults")
+    @patch("utils.manager.SlurmdbdManager.set_environment_var")
     def test__on_database_created_multiple_tcp_endpoints(
-        self, _update_defaults, _set_db_info, _write_config_and_restart_slurmdbd
+        self, _set_environment_var, _set_db_info, _write_config_and_restart_slurmdbd
     ) -> None:
         """Tests multiple tcp endpoints for the database."""
         event = Mock()
@@ -257,7 +258,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_database_created(event)
 
-        _update_defaults.assert_called_once_with(mysql_unix_port=None)
+        _set_environment_var.assert_called_once_with(mysql_unix_port=None)
         _set_db_info.assert_called_once_with(
             {
                 "db_username": "fake-user",
@@ -271,9 +272,9 @@ class TestCharm(unittest.TestCase):
 
     @patch("charm.SlurmdbdCharm._write_config_and_restart_slurmdbd")
     @patch("charm.SlurmdbdCharm.set_db_info")
-    @patch("charm.SlurmdbdCharm._update_defaults")
+    @patch("utils.manager.SlurmdbdManager.set_environment_var")
     def test__on_database_created_ipv6_tcp_endpoints(
-        self, _update_defaults, _set_db_info, _write_config_and_restart_slurmdbd
+        self, _set_environment_var, _set_db_info, _write_config_and_restart_slurmdbd
     ) -> None:
         """Tests multiple tcp endpoints for the database."""
         event = Mock()
@@ -288,7 +289,7 @@ class TestCharm(unittest.TestCase):
 
         self.harness.charm._on_database_created(event)
 
-        _update_defaults.assert_called_once_with(mysql_unix_port=None)
+        _set_environment_var.assert_called_once_with(mysql_unix_port=None)
         _set_db_info.assert_called_once_with(
             {
                 "db_username": "fake-user",
@@ -299,112 +300,6 @@ class TestCharm(unittest.TestCase):
             }
         )
         _write_config_and_restart_slurmdbd.assert_called_once_with(event)
-
-    def test__update_defaults_add_variable_to_end(self):
-        """Tests that the update_defaults adds a new environment variable."""
-        content = (
-            "# Additional options that are passed to the slurmdbd daemon\n"
-            '#SLURMDBD_OPTIONS=""\n'
-        )
-        m = mock_open(read_data=content)
-        with patch("builtins.open", m, create=True):
-            self.harness.charm._update_defaults(mysql_unix_port='"/path/to/file"')
-
-        handle = m()
-        handle.writelines.assert_called_once_with(
-            [
-                "# Additional options that are passed to the slurmdbd daemon\n",
-                '#SLURMDBD_OPTIONS=""\n',
-                'MYSQL_UNIX_PORT="/path/to/file"\n',
-            ]
-        )
-
-    def test__update_defaults_updates_variable_already_defined(self):
-        """Tests that the _update_defaults updates an environment variable."""
-        content = (
-            "# Additional options that are passed to the slurmdbd daemon\n"
-            '#SLURMDBD_OPTIONS=""\n'
-            "TEST_ENV_VAR=foo\n"
-        )
-        m = mock_open(read_data=content)
-        with patch("builtins.open", m, create=True):
-            self.harness.charm._update_defaults(test_env_var="bar")
-
-        handle = m()
-        handle.writelines.assert_called_once_with(
-            [
-                "# Additional options that are passed to the slurmdbd daemon\n",
-                '#SLURMDBD_OPTIONS=""\n',
-                "TEST_ENV_VAR=bar\n",
-            ]
-        )
-
-    def test__update_defaults_no_updates_existing(self):
-        """Tests that the _update_defaults only changes desired values."""
-        content = (
-            "# Additional options that are passed to the slurmdbd daemon\n"
-            '#SLURMDBD_OPTIONS=""\n'
-            "TEST_ENV_VAR=foo\n"
-            "TEST_STABLE=don't change me\n"
-        )
-        m = mock_open(read_data=content)
-        with patch("builtins.open", m, create=True):
-            self.harness.charm._update_defaults(test_env_var="bar")
-
-        handle = m()
-        handle.writelines.assert_called_once_with(
-            [
-                "# Additional options that are passed to the slurmdbd daemon\n",
-                '#SLURMDBD_OPTIONS=""\n',
-                "TEST_ENV_VAR=bar\n",
-                "TEST_STABLE=don't change me\n",
-            ]
-        )
-
-    def test__update_defaults_remove_existing(self):
-        """Tests that the _update_defaults removes a value."""
-        content = (
-            "# Additional options that are passed to the slurmdbd daemon\n"
-            '#SLURMDBD_OPTIONS=""\n'
-            "TEST_ENV_VAR=foo\n"
-            "TEST_STABLE=don't change me\n"
-        )
-        m = mock_open(read_data=content)
-        with patch("builtins.open", m, create=True):
-            self.harness.charm._update_defaults(test_env_var=None)
-
-        handle = m()
-        handle.writelines.assert_called_once_with(
-            [
-                "# Additional options that are passed to the slurmdbd daemon\n",
-                '#SLURMDBD_OPTIONS=""\n',
-                "TEST_STABLE=don't change me\n",
-            ]
-        )
-
-    def test__update_defaults_mixed_scenario(self):
-        """Tests that the _update_defaults adds, updates and removes a value."""
-        content = (
-            "# Additional options that are passed to the slurmdbd daemon\n"
-            '#SLURMDBD_OPTIONS=""\n'
-            "TEST_UPDATE=foo\n"
-            "TEST_REMOVE=remove me\n"
-        )
-        m = mock_open(read_data=content)
-        with patch("builtins.open", m, create=True):
-            self.harness.charm._update_defaults(
-                test_update="bar", test_remove=None, test_new="added"
-            )
-
-        handle = m()
-        handle.writelines.assert_called_once_with(
-            [
-                "# Additional options that are passed to the slurmdbd daemon\n",
-                '#SLURMDBD_OPTIONS=""\n',
-                "TEST_UPDATE=bar\n",
-                "TEST_NEW=added\n",
-            ]
-        )
 
     def test_set_db_info(self) -> None:
         """Test that set_db_info method works."""
