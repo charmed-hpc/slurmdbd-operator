@@ -19,7 +19,7 @@ import pathlib
 
 import pytest
 from _pytest.config.argparsing import Parser
-from helpers import ETCD, VERSION
+from helpers import ETCD
 from pytest_operator.plugin import OpsTest
 
 
@@ -45,4 +45,3 @@ async def slurmdbd_charm(ops_test: OpsTest):
 def pytest_sessionfinish(session, exitstatus) -> None:
     """Clean up repository after test session has completed."""
     pathlib.Path(ETCD).unlink(missing_ok=True)
-    pathlib.Path(VERSION).unlink(missing_ok=True)

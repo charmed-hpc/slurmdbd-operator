@@ -22,7 +22,7 @@ from typing import Any, Coroutine
 
 import pytest
 import tenacity
-from helpers import get_slurmctld_res, get_slurmdbd_res
+from helpers import get_slurmctld_res
 from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,6 @@ async def test_build_and_deploy_against_edge(
     """Test that the slurmdbd charm can stabilize against slurmctld and MySQL."""
     logger.info(f"Deploying {SLURMDBD} against {SLURMCTLD} and {DATABASE}")
     slurmctld_res = get_slurmctld_res()
-    get_slurmdbd_res()
     await asyncio.gather(
         ops_test.model.deploy(
             str(await slurmdbd_charm),
