@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseCreatedEvent,
@@ -286,8 +287,8 @@ class SlurmdbdCharm(CharmBase):
                 )
             # Make sure to strip the file:// off the front of the first endpoint
             # otherwise slurmdbd will not be able to connect to the database
-            socket = socket_endpoints[0][7:]
-            self._update_defaults(mysql_unix_port=f'"{socket}"')
+            socket = urlparse(socket_endpoints[0]).path
+            self._slurmdbd_manager.set_environment_var(mysql_unix_port=f'"{socket}"')
         elif tcp_endpoints:
             # This must be using TCP endpoint and the connection information will
             # be host_address:port. Only one remote mysql service will be configured
