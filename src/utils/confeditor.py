@@ -525,7 +525,7 @@ class SlurmdbdConfEditor:
     @auth_alt_types.setter
     def auth_alt_types(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `AuthAltTypes`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         self._metadata[_SlurmdbdToken.AuthAltTypes] = ",".join(value)
 
     @auth_alt_types.deleter
@@ -600,7 +600,7 @@ class SlurmdbdConfEditor:
     @communication_parameters.setter
     def communication_parameters(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `CommunicationParameters`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         self._metadata[_SlurmdbdToken.CommunicationParameters] = ",".join(value)
 
     @communication_parameters.deleter
@@ -685,7 +685,7 @@ class SlurmdbdConfEditor:
     @debug_flags.setter
     def debug_flags(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `DebugFlags`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         for flag in value:
             _check_debug_flag(flag)
         self._metadata[_SlurmdbdToken.DebugFlags] = ",".join(value)
@@ -820,7 +820,7 @@ class SlurmdbdConfEditor:
     @parameters.setter
     def parameters(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `Parameters`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         self._metadata[_SlurmdbdToken.Parameters] = ",".join(value)
 
     @parameters.deleter
@@ -855,7 +855,7 @@ class SlurmdbdConfEditor:
     @plugin_dir.setter
     def plugin_dir(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `PluginDir`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         self._metadata[_SlurmdbdToken.PluginDir] = ":".join(value)
 
     @plugin_dir.deleter
@@ -875,7 +875,7 @@ class SlurmdbdConfEditor:
     @private_data.setter
     def private_data(self, value: Union[str, List[str]]) -> None:
         """Set configuration value for parameter `PrivateData`."""
-        value = [value] if type(value) == str else value
+        value = [value] if isinstance(value, str) else value
         for data in value:
             _check_private_data(data)
         self._metadata[_SlurmdbdToken.PrivateData] = ",".join(value)
