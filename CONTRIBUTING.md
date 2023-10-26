@@ -59,7 +59,7 @@ Can also be used for pull requests.
 
 * `Type: Idea Bank` - Issues that pertain to proposing potential improvement to slurmrestd-operator.
 
-* `Type: Enchancement` - Issues marked as an agreed upon enhancement to slurmrestd-operator. Can also be used for pull requests.
+* `Type: Enhancement` - Issues marked as an agreed upon enhancement to slurmrestd-operator. Can also be used for pull requests.
 
 * `Statues: Help wanted` - Issues where we need help from the greater slurmrestd-operator community to solve.
 
