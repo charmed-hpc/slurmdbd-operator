@@ -57,7 +57,7 @@ async def test_build_and_deploy_against_edge(
         ),
         ops_test.model.deploy(
             ROUTER,
-            application_name=f"{SLURMDBD}-{ROUTER}",
+            application_name=ROUTER,
             channel="dpe/edge",
             num_units=0,
             base=charm_base,
@@ -72,8 +72,8 @@ async def test_build_and_deploy_against_edge(
     )
     # Set relations for charmed applications.
     await ops_test.model.integrate(f"{SLURMDBD}:{SLURMDBD}", f"{SLURMCTLD}:{SLURMDBD}")
-    await ops_test.model.integrate(f"{SLURMDBD}-{ROUTER}:backend-database", f"{DATABASE}:database")
-    await ops_test.model.integrate(f"{SLURMDBD}:database", f"{SLURMDBD}-{ROUTER}:database")
+    await ops_test.model.integrate(f"{ROUTER}:backend-database", f"{DATABASE}:database")
+    await ops_test.model.integrate(f"{SLURMDBD}:database", f"{ROUTER}:database")
     # Reduce the update status frequency to accelerate the triggering of deferred events.
     async with ops_test.fast_forward():
         await ops_test.model.wait_for_idle(apps=[SLURMDBD], status="active", timeout=1000)

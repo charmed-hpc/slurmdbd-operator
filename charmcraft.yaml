@@ -1,7 +1,40 @@
-# Copyright 2020 Omnivector Solutions, LLC.
+# Copyright 2020-2024 Omnivector, LLC.
 # See LICENSE file for licensing details.
-
+name: slurmdbd
 type: charm
+
+assumes:
+  - juju
+
+summary: |
+  Slurm DBD accounting daemon.
+
+description: |
+  This charm provides slurmdbd, munged, and the bindings to other utilities
+  that make lifecycle operations a breeze.
+
+  slurmdbd provides a secure enterprise-wide interface to a database for
+  SLURM. This is particularly useful for archiving accounting records.
+
+links:
+  contact: https://matrix.to/#/#hpc:ubuntu.com
+
+  source:
+    - https://github.com/omnivector-solutions/slurmdbd-operator
+
+  issues:
+    - https://github.com/omnivector-solutions/slurmdbd-operator/issues
+
+requires:
+  database:
+    interface: mysql_client
+  fluentbit:
+    interface: fluentbit
+
+provides:
+  slurmctld:
+    interface: slurmdbd
+
 bases:
   - build-on:
       - name: ubuntu
@@ -10,22 +43,3 @@ bases:
       - name: ubuntu
         channel: "22.04"
         architectures: [amd64]
-
-parts:
-  charm:
-    build-packages: [git]
-    charm-python-packages: [setuptools]
-
-  # Create a version file and pack it into the charm. This is dynamically generated
-  # as part of the build process for a charm to ensure that the git revision of the
-  # charm is always recorded in this version file.
-  version-file:
-    plugin: nil
-    build-packages:
-      - git
-    override-build: |
-      VERSION=$(git -C $CRAFT_PART_SRC/../../charm/src describe --dirty --always)
-      echo "Setting version to $VERSION"
-      echo $VERSION > $CRAFT_PART_INSTALL/version
-    stage:
-      - version
