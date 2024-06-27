@@ -9,4 +9,3 @@ __pycache__/
 .vscode/
 version
 .ruff_cache/
-.mypy_cache/
