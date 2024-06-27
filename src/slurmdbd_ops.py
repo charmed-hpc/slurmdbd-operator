@@ -15,7 +15,13 @@ from typing import Optional
 import charms.operator_libs_linux.v0.apt as apt
 import charms.operator_libs_linux.v1.systemd as systemd
 import distro
-from constants import SLURMDBD_DEFAULTS_FILE, UBUNTU_HPC_PPA_KEY
+from constants import (
+    SLURM_GROUP,
+    SLURM_USER,
+    SLURMDBD_DEFAULTS_FILE,
+    STATE_DIR,
+    UBUNTU_HPC_PPA_KEY,
+)
 
 logger = logging.getLogger()
 
@@ -107,21 +113,32 @@ class SlurmdbdOpsManager:
     def __init__(self):
         """Set the initial attribute values."""
         self._slurm_component = "slurmdbd"
-
-        self._slurm_state_dir = Path("/var/spool/slurmdbd")
-        self._slurmdbd_conf_dir = Path("/etc/slurm")
-        self._slurmdbd_log_dir = Path("/var/log/slurm")
-        self._slurm_user = "slurm"
-        self._slurm_group = "slurm"
-
         self._munge_package = CharmedHPCPackageLifecycleManager("munge")
         self._slurmdbd_package = CharmedHPCPackageLifecycleManager("slurmdbd")
 
+    def install(self) -> bool:
+        """Install slurmdbd and munge to the system and setup paths."""
+        if self._slurmdbd_package.install() is not True:
+            return False
+        systemd.service_stop("slurmdbd")
+
+        if self._munge_package.install() is not True:
+            return False
+        systemd.service_stop("munge")
+
+        # Create the state directory as it is not created as part of the package installation.
+        STATE_DIR.mkdir()
+        slurm_user_uid = getpwnam(SLURM_USER).pw_uid
+        slurm_group_gid = getgrnam(SLURM_GROUP).gr_gid
+        os.chown(f"{STATE_DIR}", slurm_user_uid, slurm_group_gid)
+
+        return True
+
     def write_slurmdbd_conf(self, slurmdbd_parameters: dict) -> None:
         """Render slurmdbd.conf."""
-        slurmdbd_conf = self._slurmdbd_conf_dir / "slurmdbd.conf"
-        slurm_user_uid = getpwnam(self._slurm_user).pw_uid
-        slurm_group_gid = getgrnam(self._slurm_group).gr_gid
+        slurmdbd_conf = Path("/etc/slurm/slurmdbd.conf")
+        slurm_user_uid = getpwnam(SLURM_USER).pw_uid
+        slurm_group_gid = getgrnam(SLURM_GROUP).gr_gid
 
         header = textwrap.dedent(
             f"""
@@ -145,35 +162,14 @@ class SlurmdbdOpsManager:
 
     def write_jwt_rsa(self, jwt_rsa: str) -> None:
         """Write the jwt_rsa key and set permissions."""
-        jwt_rsa_path = self._slurm_state_dir / "jwt_hs256.key"
-        slurm_user_uid = getpwnam(self._slurm_user).pw_uid
-        slurm_group_gid = getgrnam(self._slurm_group).gr_gid
+        jwt_rsa_path = STATE_DIR / "jwt_hs256.key"
+        slurm_user_uid = getpwnam(SLURM_USER).pw_uid
+        slurm_group_gid = getgrnam(SLURM_GROUP).gr_gid
 
-        # Write the jwt_rsa key to the file and chmod 0600 + chown to slurm_user.
         jwt_rsa_path.write_text(jwt_rsa)
         jwt_rsa_path.chmod(0o600)
 
         os.chown(f"{jwt_rsa_path}", slurm_user_uid, slurm_group_gid)
-
-    def install(self) -> bool:
-        """Install slurmdbd and munge to the system and setup paths."""
-        slurm_user_uid = getpwnam(self._slurm_user).pw_uid
-        slurm_group_gid = getgrnam(self._slurm_group).gr_gid
-
-        if self._slurmdbd_package.install() is not True:
-            return False
-        systemd.service_stop("slurmdbd")
-
-        if self._munge_package.install() is not True:
-            return False
-        systemd.service_stop("munge")
-
-        # Create needed paths with correct permissions.
-        for syspath in [self._slurmdbd_conf_dir, self._slurmdbd_log_dir, self._slurm_state_dir]:
-            if not syspath.exists():
-                syspath.mkdir()
-            os.chown(f"{syspath}", slurm_user_uid, slurm_group_gid)
-        return True
 
     def stop_slurmdbd(self) -> None:
         """Stop slurmdbd."""
@@ -244,41 +240,6 @@ class SlurmdbdOpsManager:
             logger.error(e)
             return False
         return True
-
-    @property
-    def fluentbit_config_slurm(self) -> list:
-        """Return Fluentbit configuration parameters to forward Slurm logs."""
-        log_file = self._slurmdbd_log_dir / "slurmdbd.log"
-
-        cfg = [
-            {
-                "input": [
-                    ("name", "tail"),
-                    ("path", log_file.as_posix()),
-                    ("path_key", "filename"),
-                    ("tag", self._slurm_component),
-                    ("parser", "slurm"),
-                ]
-            },
-            {
-                "parser": [
-                    ("name", "slurm"),
-                    ("format", "regex"),
-                    ("regex", r"^\[(?<time>[^\]]*)\] (?<log>.*)$"),
-                    ("time_key", "time"),
-                    ("time_format", "%Y-%m-%dT%H:%M:%S.%L"),
-                ]
-            },
-            {
-                "filter": [
-                    ("name", "record_modifier"),
-                    ("match", self._slurm_component),
-                    ("record", "hostname ${HOSTNAME}"),
-                    ("record", f"service {self._slurm_component}"),
-                ]
-            },
-        ]
-        return cfg
 
     # Originally contributed by @wolsen
     # https://github.com/charmed-hpc/slurmdbd-operator/commit/2b47acda7f51aea8699886c49783eaf0de691747

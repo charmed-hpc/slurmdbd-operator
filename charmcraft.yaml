@@ -28,8 +28,6 @@ links:
 requires:
   database:
     interface: mysql_client
-  fluentbit:
-    interface: fluentbit
 
 provides:
   slurmctld:
