@@ -13,7 +13,6 @@ from charms.data_platform_libs.v0.data_interfaces import (
     DatabaseCreatedEvent,
     DatabaseRequires,
 )
-from charms.fluentbit.v0.fluentbit import FluentbitClient
 from constants import CHARM_MAINTAINED_PARAMETERS, SLURM_ACCT_DB
 from interface_slurmctld import Slurmctld, SlurmctldAvailableEvent, SlurmctldUnavailableEvent
 from ops import (
@@ -22,7 +21,6 @@ from ops import (
     CharmBase,
     ConfigChangedEvent,
     InstallEvent,
-    RelationCreatedEvent,
     StoredState,
     UpdateStatusEvent,
     WaitingStatus,
@@ -48,22 +46,16 @@ class SlurmdbdCharm(CharmBase):
         )
 
         self._db = DatabaseRequires(self, relation_name="database", database_name=SLURM_ACCT_DB)
-        self._fluentbit = FluentbitClient(self, "fluentbit")
         self._slurmdbd_ops_manager = SlurmdbdOpsManager()
         self._slurmctld = Slurmctld(self, "slurmctld")
 
         event_handler_bindings = {
-            # Charm core events
             self.on.install: self._on_install,
             self.on.update_status: self._on_update_status,
             self.on.config_changed: self._write_config_and_restart_slurmdbd,
-            # Database relation
             self._db.on.database_created: self._on_database_created,
-            # Slurmctld
             self._slurmctld.on.slurmctld_available: self._on_slurmctld_available,
             self._slurmctld.on.slurmctld_unavailable: self._on_slurmctld_unavailable,
-            # fluentbit
-            self.on["fluentbit"].relation_created: self._on_fluentbit_relation_created,
         }
         for event, handler in event_handler_bindings.items():
             self.framework.observe(event, handler)
@@ -91,11 +83,6 @@ class SlurmdbdCharm(CharmBase):
 
             self.unit.status = ActiveStatus("slurmdbd successfully installed")
         self._check_status()
-
-    def _on_fluentbit_relation_created(self, event: RelationCreatedEvent) -> None:
-        """Set up Fluentbit log forwarding."""
-        logger.debug("## Configuring fluentbit")
-        self._fluentbit.configure(self._slurmdbd_ops_manager.fluentbit_config_slurm)
 
     def _on_update_status(self, event: UpdateStatusEvent) -> None:
         """Handle update status."""

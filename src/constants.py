@@ -3,11 +3,16 @@
 """Constants."""
 from pathlib import Path
 
+SLURM_USER = "slurm"
+SLURM_GROUP = "slurm"
+
+STATE_DIR = Path("/var/spool/slurmdbd")
+
 CHARM_MAINTAINED_PARAMETERS = {
     "DbdPort": "6819",
     "AuthType": "auth/munge",
     "AuthInfo": '"socket=/var/run/munge/munge.socket.2"',
-    "SlurmUser": "slurm",
+    "SlurmUser": SLURM_USER,
     "PluginDir": "/usr/lib/x86_64-linux-gnu/slurm-wlm",
     "PidFile": "/var/run/slurmdbd.pid",
     "LogFile": "/var/log/slurm/slurmdbd.log",
@@ -18,7 +23,7 @@ SLURM_ACCT_DB = "slurm_acct_db"
 
 SLURMDBD_DEFAULTS_FILE = Path("/etc/default/slurmdbd")
 
-UBUNTU_HPC_PPA_KEY: str = """
+UBUNTU_HPC_PPA_KEY = """
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: Hostname:
 Version: Hockeypuck 2.1.1-10-gec3b0e7
