@@ -96,8 +96,11 @@ class SlurmdbdCharm(CharmBase):
 
         if (jwt := event.jwt_rsa) is not None:
             self._slurmdbd_ops_manager.write_jwt_rsa(jwt)
+            
         if (munge_key := event.munge_key) is not None:
+            self._slurmdbd_ops_manager.stop_munge()
             self._slurmdbd_ops_manager.write_munge_key(munge_key)
+            self._slurmdbd_ops_manager.start_munge()
 
         self._write_config_and_restart_slurmdbd(event)
 
