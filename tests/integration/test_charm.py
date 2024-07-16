@@ -71,7 +71,7 @@ async def test_build_and_deploy_against_edge(
         ),
     )
     # Set relations for charmed applications.
-    await ops_test.model.integrate(f"{SLURMDBD}:{SLURMDBD}", f"{SLURMCTLD}:{SLURMDBD}")
+    await ops_test.model.integrate(f"{SLURMDBD}:{SLURMCTLD}", f"{SLURMCTLD}:{SLURMDBD}")
     await ops_test.model.integrate(f"{ROUTER}:backend-database", f"{DATABASE}:database")
     await ops_test.model.integrate(f"{SLURMDBD}:database", f"{ROUTER}:database")
     # Reduce the update status frequency to accelerate the triggering of deferred events.
