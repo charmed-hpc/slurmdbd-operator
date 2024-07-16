@@ -102,7 +102,12 @@ class SlurmdbdCharm(CharmBase):
             self._slurmdbd_ops_manager.write_munge_key(munge_key)
             self._slurmdbd_ops_manager.start_munge()
 
-        self._write_config_and_restart_slurmdbd(event)
+        # Don't try to write the config before the database has been created.
+        # Otherwise, this will trigger a defer on this event, which we don't really need
+        # or the munge service will restart too many times, triggering a restart limit on
+        # systemctl.
+        if self._stored.db_info:
+            self._write_config_and_restart_slurmdbd(event)
 
     def _on_database_created(self, event: DatabaseCreatedEvent) -> None:
         """Process the DatabaseCreatedEvent and updates the database parameters.
