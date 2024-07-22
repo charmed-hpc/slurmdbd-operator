@@ -91,7 +91,7 @@ async def test_slurmdbd_is_active(ops_test: OpsTest) -> None:
     """Test that slurmdbd is active inside Juju unit."""
     logger.info("Checking that slurmdbd daemon is active inside unit")
     slurmdbd_unit = ops_test.model.units.get(UNIT_NAME)
-    res = (await slurmdbd_unit.ssh("systemctl is-active slurmdbd")).strip("\n")
+    res = (await slurmdbd_unit.ssh("systemctl is-active snap.slurm.slurmdbd")).strip("\n")
     assert res == "active"
 
 
@@ -121,5 +121,5 @@ async def test_munge_is_active(ops_test: OpsTest) -> None:
     """Test that munge is active inside Juju unit."""
     logger.info("Checking that munge is active inside Juju unit")
     slurmdbd_unit = ops_test.model.units.get(UNIT_NAME)
-    res = (await slurmdbd_unit.ssh("systemctl is-active munge")).strip("\n")
+    res = (await slurmdbd_unit.ssh("systemctl is-active snap.slurm.munged")).strip("\n")
     assert res == "active"
