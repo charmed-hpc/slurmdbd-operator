@@ -267,6 +267,7 @@ class SlurmdbdCharm(CharmBase):
             }
 
             if self._slurmctld.is_joined:
+                slurmdbd_full_config["AuthAltTypes"] = "auth/jwt"
                 slurmdbd_full_config["AuthAltParameters"] = f'"jwt_key={JWT_RSA_PATH}"'
 
             self._slurmdbd.disable()
