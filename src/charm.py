@@ -247,6 +247,7 @@ class SlurmdbdCharm(CharmBase):
             }
 
             if self._slurmctld.is_joined:
+                slurmdbd_full_config["AuthAltTypes"] = "auth/jwt"
                 slurmdbd_full_config["AuthAltParameters"] = (
                     '"jwt_key=/var/spool/slurmdbd/jwt_hs256.key"'
                 )
